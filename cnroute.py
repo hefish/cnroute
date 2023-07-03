@@ -73,6 +73,7 @@ class CNRoute:
                 cmd = "ip ro add " + network + " via " + default_gateway
                 print(cmd, end="\n")
                 #os.system(cmd)
+    
 
     def run(self):
         net_list = self.get_cn_ip()
