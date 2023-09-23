@@ -9,10 +9,12 @@ import socket
 import struct
 import os
 import datetime
+import getopt
+
 
 class CNRoute:
     data_src = "https://ispip.clang.cn/all_cn.txt"
-    cache_file = os.path.dirname(__file__) + os.path.sep + "all_cn.txt"
+    cache_file = os.path.join(os.path.dirname(__file__) , "all_cn.txt")
 
     def __init__(self):
         pass
@@ -23,6 +25,7 @@ class CNRoute:
         CNRoute  by hefish
 
         -h   this message
+        -u   update CN network list
         -a   add cn route
         -d   remove cn route
         """)
@@ -38,6 +41,7 @@ class CNRoute:
         f.write(content)
         f.close()
             
+        print("cnroute network list updated. ")
         return content
 
     def get_cn_ip(self):
@@ -55,7 +59,7 @@ class CNRoute:
         return net_list
        
     
-    def get_default_gateway(self):
+    def get_default_gateway(self, dev):
         """Read the default gateway directly from /proc."""
         with open("/proc/net/route") as fh:
             for line in fh:
@@ -63,27 +67,40 @@ class CNRoute:
                 if fields[1] != '00000000' or not int(fields[3], 16) & 2:
                     # If not default route or not RTF_GATEWAY, skip it
                     continue
+                if fields[0] != dev:
+                    continue
 
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
 
     def add_route(self, ip_list):
-        default_gateway = self.get_default_gateway()
+        default_gateway = self.get_default_gateway("ens18")
         for network in ip_list:
             if network.strip() != "":
                 cmd = "ip ro add " + network + " via " + default_gateway
                 print(cmd, end="\n")
-                #os.system(cmd)
+                os.system(cmd)
     
 
     def run(self):
-        net_list = self.get_cn_ip()
-        self.add_route(net_list)
-
-
-
-
-
-
+        try :
+            argv=sys.argv[1:]
+            opts , args = getopt.getopt(argv, "adhu")
+        except:
+            self.help()
+        
+        for opt, arg in opts:
+            if opt in ['-h']:
+                self.help()
+            if opt in ['-a']:
+                net_list = self.get_cn_ip()
+                self.add_route(net_list)
+            elif opt in ['-d']:
+                net_list = self.get_cn_ip()
+                # delete cn route
+            elif opt in ['-u']:
+                self.download_cache_file()
+            else:
+                self.help()                
 
 
 if __name__ == "__main__" :
