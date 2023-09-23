@@ -87,6 +87,12 @@ class CNRoute:
                 print(cmd, end="\n")
                 os.system(cmd)
     
+    def del_route(self, ip_list):
+        for network in ip_list:
+            if network.strip() != "":
+                cmd = "ip ro delete " + network 
+                print(cmd, end="\n")
+                os.system(cmd)
 
     def run(self):
         try :
@@ -103,7 +109,7 @@ class CNRoute:
                 self.add_route(net_list)
             elif opt in ['-d']:
                 net_list = self.get_cn_ip()
-                # delete cn route
+                self.del_route()
             elif opt in ['-u']:
                 self.download_cache_file()
             else:
