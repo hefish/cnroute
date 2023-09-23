@@ -59,7 +59,7 @@ class CNRoute:
         return net_list
        
     
-    def get_default_gateway(self, dev):
+    def get_default_gateway(self):
         """Read the default gateway directly from /proc."""
         with open("/proc/net/route") as fh:
             for line in fh:
@@ -67,13 +67,20 @@ class CNRoute:
                 if fields[1] != '00000000' or not int(fields[3], 16) & 2:
                     # If not default route or not RTF_GATEWAY, skip it
                     continue
-                if fields[0] != dev:
+                if fields[2] == '00000000':
+                    continue
+                if fields[7] != '00000000' :
                     continue
 
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+            return None
 
     def add_route(self, ip_list):
-        default_gateway = self.get_default_gateway("ens18")
+        default_gateway = self.get_default_gateway()
+        if default_gateway == None:
+            print("Cannot find default gateway, check the route table . ")
+            return 
+
         for network in ip_list:
             if network.strip() != "":
                 cmd = "ip ro add " + network + " via " + default_gateway
